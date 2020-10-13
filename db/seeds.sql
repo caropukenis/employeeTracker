@@ -27,8 +27,8 @@ INSERT INTO role
 VALUES
     (1, "Engineer", 65000, 1);
 
-    (id, title, salary, d_id)
 INSERT INTO role
+    (id, title, salary, d_id)
 VALUES
     (2, "Engineer Supervisor", 80000, 1);
 
