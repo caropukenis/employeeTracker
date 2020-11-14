@@ -9,13 +9,14 @@ function questions() {
     .prompt({
       name: "menu",
       type: "list",
-      message: "Welcome to the Emoloyee Tracker",
+      message: "Welcome to the Employee Tracker",
       choices: [
-        "View all Employees",
-        "View all Departments",
-        "View all Employees by Manager",
-        "View all Roles",
-        "Add Employees",
+        "View All Employees",
+        "View All Departments",
+        "View All Employees By Manager",
+        "View All Roles",
+        "Add Employee",
+        "Remove Employee",
         "Add Role",
         "Delete Role",
         "Add Department",
@@ -29,44 +30,58 @@ function questions() {
     .then((answer) => {
       switch (answer.menu) {
         case "View All Employees":
-          viewAllE();
+          viewAllEmployees();
           break;
-        case "View all Departments":
-          viewAllD();
+
+        case "View All Departments":
+          viewAllDepartments();
           break;
-        case "View all Employees by Manager":
-          viewAllEByM();
+
+        case "View All Employees By Manager":
+          viewAllEmployeesByManager();
           break;
-        case "View all Roles":
+
+        case "View All Roles":
           viewAllRoles();
           break;
+
         case "Add Employee":
-          addE();
+          addEmployee();
           break;
+
         case "Remove Employee":
-          removeE();
+          removeEmployee();
           break;
+
         case "Add Role":
           addRole();
           break;
+
         case "Delete Role":
           deleteRole();
           break;
+
         case "Add Department":
-          addD();
+          addDepartment();
           break;
+
         case "Delete Department":
-          deleteD();
+          deleteDepartment();
           break;
+
         case "Update Employee Role":
-          updateErole();
+          updateEmployeeRole();
           break;
-        case "Update Employee Role":
-          updateEM();
+
+        case "Update Employee Manager":
+          updateEmployeeManager();
           break;
+
+        // -- TO DO --
         case "View Department Budget":
-          viewDbudger();
+          viewDepartmentBudget();
           break;
+
         case "Exit":
           connection.end();
           break;
@@ -74,10 +89,9 @@ function questions() {
     });
 }
 
-function viewAllE() {
+function viewAllEmployees() {
   const query =
-    "SELECT e.id, e.first_name, e.last_name, role.title, role.salary FROM employee, role WHERE role.id = e.role_id";
-
+    "SELECT employee.id, employee.first_name, employee.last_name, role.title, role.salary FROM employee, role WHERE role.id = employee.role_id";
   connection.query(query, function (err, res) {
     if (err) throw err;
     console.table(res);
@@ -85,45 +99,51 @@ function viewAllE() {
   });
 }
 
-function viewAllD() {
+function viewAllDepartments() {
   const query = "SELECT * FROM department";
   connection.query(query, function (err, res) {
     if (err) throw err;
+    console.table(res);
     questions();
   });
 }
 
-function viewAllEByM() {
-  const mArray = [];
+function viewAllEmployeesByManager() {
+  const managerArr = [];
   let query =
-    "SELECT e.id, e.first_name, e.last_name, e.m_id FROM e Where m_is is NULL";
+    "SELECT employee.id, employee.first_name, employee.last_name, employee.manager_id FROM employee WHERE manager_id IS NULL";
+
   connection.query(query, function (err, res) {
     if (err) throw err;
 
     for (let i = 0; i < res.length; i++) {
-      let mString =
+      let managerStr =
         res[i].id + " " + res[i].first_name + " " + res[i].last_name;
-      mArray.push(mString);
+      managerArr.push(managerStr);
     }
 
     inquirer
       .prompt({
-        name: "mList",
+        name: "managerList",
         type: "list",
-        message: "Please select a manager to view their employees.",
-        choices: mArray,
+        message: "Please select a supervisor to view their employees.",
+        choices: managerArr,
       })
       .then((answer) => {
-        const eList = {};
-        eList.mID = parseInt(answer.mList.split(" ")[0]);
+        const employeeList = {};
+        employeeList.managerID = parseInt(answer.managerList.split(" ")[0]);
 
         let query = "SELECT * FROM employee WHERE ?";
 
-        connection.query(query, { m_id: eList.mIdD }, function (err, res) {
-          if (err) throw err;
-          console.table(res);
-          questions();
-        });
+        connection.query(
+          query,
+          { manager_id: employeeList.managerID },
+          function (err, res) {
+            if (err) throw err;
+            console.table(res);
+            questions();
+          }
+        );
       });
   });
 }
@@ -137,21 +157,21 @@ function viewAllRoles() {
   });
 }
 
-function addE() {
-  const roleArray = [];
-  const eArray = [];
+function addEmployee() {
+  const roleArr = [];
+  const employeeArr = [];
 
   connection.query("SELECT * FROM role", function (err, res) {
     for (let i = 0; i < res.length; i++) {
-      let roleString = res[i].id + " " + res[i].title;
-      roleArray.push(roleStr);
+      let roleStr = res[i].id + " " + res[i].title;
+      roleArr.push(roleStr);
     }
 
     connection.query("SELECT * FROM employee", function (err, res) {
       for (let i = 0; i < res.length; i++) {
-        let eString =
+        let employeeStr =
           res[i].id + " " + res[i].first_name + " " + res[i].last_name;
-        eArray.push(eString);
+        employeeArr.push(employeeStr);
       }
 
       inquirer
@@ -170,23 +190,28 @@ function addE() {
             name: "newRoleID",
             type: "list",
             message: "What's the new employee's role?",
-            choices: roleArray,
+            choices: roleArr,
           },
           {
-            name: "newMID",
+            name: "newManagerID",
             type: "list",
             message: "Who is the new employee's supervisor?",
-            choices: eArray,
+            choices: employeeArr,
           },
         ])
         .then((answer) => {
-          const newE = {};
-          newE.roleID = parseInt(answer.newRoleID.split(" ")[0]);
-          newE.mID = parseInt(answer.newMID.split(" ")[0]);
+          const newEmployee = {};
+          newEmployee.roleID = parseInt(answer.newRoleID.split(" ")[0]);
+          newEmployee.managerID = parseInt(answer.newManagerID.split(" ")[0]);
 
           connection.query(
-            "INSERT INTO employee (first_name, last_name, role_id, m_id) VALUES (?, ?, ?, ?)",
-            [answer.newFirstName, answer.newLastName, newE.roleID, newE.mID]
+            "INSERT INTO employee (first_name, last_name, role_id, manager_id) VALUES (?, ?, ?, ?)",
+            [
+              answer.newFirstName,
+              answer.newLastName,
+              newEmployee.roleID,
+              newEmployee.managerID,
+            ]
           ),
             function (err, res) {
               if (err) throw err;
@@ -199,24 +224,24 @@ function addE() {
   });
 }
 
-function removeE() {
-  let eArray = [];
+function removeEmployee() {
+  let employeeArr = [];
 
   connection.query("SELECT * FROM employee", function (err, res) {
     for (let i = 0; i < res.length; i++) {
-      let eString =
+      let employeeStr =
         res[i].id + " " + res[i].first_name + " " + res[i].last_name;
-      eArray.push(eString);
+      employeeArr.push(employeeStr);
     }
     inquirer
       .prompt({
         name: "removeEmployee",
         type: "list",
         message: "Please select the employee you would like to remove",
-        choices: eArray,
+        choices: employeeArr,
       })
       .then((answer) => {
-        const removeID = parseInt(answer.removeE.split(" ")[0]);
+        const removeID = parseInt(answer.removeEmployee.split(" ")[0]);
 
         let query = "DELETE FROM employee WHERE ?";
 
@@ -230,12 +255,12 @@ function removeE() {
 }
 
 function addRole() {
-  const dArray = [];
+  const departmentArr = [];
 
   connection.query("SELECT * FROM department", function (err, res) {
     for (let i = 0; i < res.length; i++) {
-      let dString = res[i].id + " " + res[i].name;
-      dArray.push(dString);
+      let departmentStr = res[i].id + " " + res[i].name;
+      departmentArr.push(departmentStr);
     }
 
     inquirer
@@ -254,16 +279,16 @@ function addRole() {
           name: "departmentID",
           type: "list",
           message: "Which department is the new role part of?",
-          choices: dArray,
+          choices: departmentArr,
         },
       ])
       .then(function (answer) {
         const newRole = {};
-        newRole.departmentID = parseInt(answer.dID.split(" ")[0]);
+        newRole.departmentID = parseInt(answer.departmentID.split(" ")[0]);
 
         connection.query(
           "INSERT INTO role (title, salary, department_id) VALUES (?, ?, ?)",
-          [answer.newRole, answer.newRoleSalary, newRole.dID]
+          [answer.newRole, answer.newRoleSalary, newRole.departmentID]
         ),
           function (err, res) {
             if (err) throw err;
@@ -275,19 +300,19 @@ function addRole() {
 }
 
 function deleteRole() {
-  let roleArray = [];
+  let roleArr = [];
 
   connection.query("SELECT * FROM role", function (err, res) {
     for (let i = 0; i < res.length; i++) {
-      let roleString = res[i].id + " " + res[i].title;
-      roleArray.push(roleString);
+      let roleStr = res[i].id + " " + res[i].title;
+      roleArr.push(roleStr);
     }
     inquirer
       .prompt({
         name: "removeRole",
         type: "list",
         message: "Please select the role you would like to remove",
-        choices: roleArray,
+        choices: roleArr,
       })
       .then((answer) => {
         const removeID = parseInt(answer.removeRole.split(" ")[0]);
@@ -303,7 +328,7 @@ function deleteRole() {
   });
 }
 
-function addD() {
+function addDepartment() {
   inquirer
     .prompt({
       type: "input",
@@ -323,23 +348,23 @@ function addD() {
     });
 }
 
-function deleteD() {
-  let dArray = [];
+function deleteDepartment() {
+  let departmentArr = [];
 
   connection.query("SELECT * FROM department", function (err, res) {
     for (let i = 0; i < res.length; i++) {
-      let dString = res[i].id + " " + res[i].name;
-      dArray.push(dString);
+      let departmentStr = res[i].id + " " + res[i].name;
+      departmentArr.push(departmentStr);
     }
     inquirer
       .prompt({
         name: "removeDepartment",
         type: "list",
         message: "Please select the department you would like to remove",
-        choices: dArray,
+        choices: departmentArr,
       })
       .then((answer) => {
-        const removeID = parseInt(answer.removeD.split(" ")[0]);
+        const removeID = parseInt(answer.removeDepartment.split(" ")[0]);
 
         let query = "DELETE FROM department WHERE ?";
 
@@ -352,20 +377,21 @@ function deleteD() {
   });
 }
 
-function updateErole() {
-  let roleArray = [];
+function updateEmployeeRole() {
+  // TO DO: Update manager_id to reflect which supervisor oversees the new role.
+  let roleArr = [];
   connection.query("SELECT * FROM role", function (err, res) {
     for (let i = 0; i < res.length; i++) {
-      let roleString = res[i].id + " " + res[i].title;
-      roleArray.push(roleString);
+      let roleStr = res[i].id + " " + res[i].title;
+      roleArr.push(roleStr);
     }
 
-    let eArray = [];
+    let employeeArr = [];
     connection.query("SELECT * FROM employee", function (err, res) {
       for (let i = 0; i < res.length; i++) {
-        let eString =
+        let employeeStr =
           res[i].id + " " + res[i].first_name + " " + res[i].last_name;
-        eArray.push(eString);
+        employeeArr.push(employeeStr);
       }
 
       inquirer
@@ -374,23 +400,23 @@ function updateErole() {
             name: "updateRole",
             type: "list",
             message: "Select the employee whose role you would like to update.",
-            choices: eArray,
+            choices: employeeArr,
           },
           {
             name: "newRole",
             type: "list",
             message: "Please select the employee's new role.",
-            choices: roleArray,
+            choices: roleArr,
           },
         ])
         .then((answer) => {
           const updateID = {};
-          updateID.eID = parseInt(answer.updateRole.split(" ")[0]);
+          updateID.employeeID = parseInt(answer.updateRole.split(" ")[0]);
           updateID.newID = parseInt(answer.newRole.split(" ")[0]);
 
           connection.query("UPDATE employee SET role_id = ? WHERE id = ?", [
             updateID.newID,
-            updateID.eID,
+            updateID.employeeID,
           ]);
           console.log("Role successfully updated!");
           questions();
@@ -399,16 +425,16 @@ function updateErole() {
   });
 }
 
-function updateEM() {
-  let eArray = [];
-  let mArray = [];
+function updateEmployeeManager() {
+  let employeeArr = [];
+  let managerArr = [];
 
   connection.query("SELECT * FROM employee", function (err, res) {
     for (let i = 0; i < res.length; i++) {
-      let eString =
+      let employeeStr =
         res[i].id + " " + res[i].first_name + " " + res[i].last_name;
-      eArray.push(eString);
-      mArray.push(eString);
+      employeeArr.push(employeeStr);
+      managerArr.push(employeeStr);
     }
     inquirer
       .prompt([
@@ -416,34 +442,35 @@ function updateEM() {
           name: "employee",
           type: "list",
           message: "Which employee needs a new manager?",
-          choices: eArray,
+          choices: employeeArr,
         },
         {
           name: "manager",
           type: "list",
           message: "Who is the new manager for this employee?",
-          choices: mArray,
+          choices: managerArr,
         },
       ])
       .then((answer) => {
-        const updateM = {};
-        updateM.eID = parseInt(answer.e.split(" ")[0]);
-        updateM.mID = parseInt(answer.m.split(" ")[0]);
-        let query = "UPDATE employee SET m_id = ? WHERE id = ?";
+        const updateManager = {};
+        updateManager.employeeID = parseInt(answer.employee.split(" ")[0]);
+        updateManager.managerID = parseInt(answer.manager.split(" ")[0]);
+        let query = "UPDATE employee SET manager_id = ? WHERE id = ?";
 
-        connection.query(query, [updateM.mID, updateM.eID], function (
-          err,
-          res
-        ) {
-          if (err) throw err;
-        });
+        connection.query(
+          query,
+          [updateManager.managerID, updateManager.employeeID],
+          function (err, res) {
+            if (err) throw err;
+          }
+        );
         console.log("Employee manager has been updated.");
         questions();
       });
   });
 }
 
-function viewDBudget() {
+function viewDepartmentBudget() {
   let query =
     "SELECT department.id AS id, department.name AS departments, SUM(salary) AS budget FROM role LEFT JOIN department ON role.department_id = department.id GROUP BY role.department_id";
 

@@ -1,5 +1,5 @@
 {
-  "name": "employeetracker",
+  "name": "employee-tracker",
   "version": "1.0.0",
   "description": "",
   "main": "index.js",
@@ -8,12 +8,18 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/caropukenis/employeeTracker.git"
+    "url": "git+https://github.com/TomOverland/Employee-Tracker.git"
   },
-  "author": "",
+  "author": "Tom Overland",
   "license": "ISC",
   "bugs": {
-    "url": "https://github.com/caropukenis/employeeTracker/issues"
+    "url": "https://github.com/TomOverland/Employee-Tracker/issues"
   },
-  "homepage": "https://github.com/caropukenis/employeeTracker#readme"
+  "homepage": "https://github.com/TomOverland/Employee-Tracker#readme",
+  "dependencies": {
+    "console.table": "^0.10.0",
+    "figlet": "^1.5.0",
+    "inquirer": "^7.3.3",
+    "mysql": "^2.18.1"
+  }
 }
